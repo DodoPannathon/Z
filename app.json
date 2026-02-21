@@ -20,6 +20,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "statusBar": {
+        "backgroundColor": "#10B981",
+        "barStyle": "light-content",
+        "translucent": false
+      },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
