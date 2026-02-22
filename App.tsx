@@ -24,9 +24,15 @@ export default function App() {
   // Create PanResponder for Swipeable Modal
   const initialModalHeight = screenHeight * 0.8;
   // Don't allow the modal to expand all the way to the very top — leave a gap
-  const modalMaxHeight = screenHeight - (Platform.OS === 'ios' ? 80 : 20);
+  const modalMaxHeight = screenHeight - (Platform.OS === 'ios' ? 80 : 15);
   const modalHeight = useRef(new Animated.Value(initialModalHeight)).current;
   const dragStartHeight = useRef(initialModalHeight);
+
+  // Category modal swipeable controls (separate from transaction modal)
+  const initialCatModalHeight = screenHeight * 0.6;
+  const catModalMaxHeight = screenHeight - (Platform.OS === 'ios' ? 80 : 15);
+  const catModalHeight = useRef(new Animated.Value(initialCatModalHeight)).current;
+  const catDragStartHeight = useRef(initialCatModalHeight);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -66,7 +72,7 @@ export default function App() {
             useNativeDriver: false,
             bounciness: 0
           }).start();
-        } else if (currentHeight < screenHeight * 0.4) {
+        } else if (currentHeight < screenHeight * 0.75) {
           setModalVisible(false);
         } else {
           Animated.spring(modalHeight, {
@@ -78,11 +84,40 @@ export default function App() {
     })
   ).current;
 
+  const panResponderCat = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
+      onPanResponderGrant: () => {
+        // @ts-ignore
+        catDragStartHeight.current = catModalHeight._value;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const newHeight = catDragStartHeight.current - gestureState.dy;
+        const clampedHeight = Math.max(screenHeight * 0.25, Math.min(catModalMaxHeight, newHeight));
+        catModalHeight.setValue(clampedHeight);
+      },
+      onPanResponderRelease: () => {
+        // @ts-ignore
+        const currentHeight = catModalHeight._value;
+        if (currentHeight > screenHeight * 0.9) {
+          Animated.spring(catModalHeight, { toValue: catModalMaxHeight, useNativeDriver: false, bounciness: 0 }).start();
+        } else if (currentHeight < screenHeight * 0.59) {
+          setCatModalVisible(false);
+        } else {
+          Animated.spring(catModalHeight, { toValue: initialCatModalHeight, useNativeDriver: false }).start();
+        }
+      }
+    })
+  ).current;
+
   useEffect(() => {
     if (modalVisible) {
       modalHeight.setValue(initialModalHeight);
     }
   }, [modalVisible]);
+
+  
 
   // Category Form State
   const [catModalVisible, setCatModalVisible] = useState(false);
@@ -91,6 +126,12 @@ export default function App() {
   const [catIcon, setCatIcon] = useState('📝');
   const [catColor, setCatColor] = useState('#F3F4F6');
   const [catType, setCatType] = useState<'income' | 'expense' | 'all'>('expense');
+
+  useEffect(() => {
+    if (catModalVisible) {
+      catModalHeight.setValue(initialCatModalHeight);
+    }
+  }, [catModalVisible]);
 
   useEffect(() => {
     const setup = async () => {
@@ -199,8 +240,7 @@ export default function App() {
       name: catName,
       icon: catIcon,
       color: catColor,
-      type: catType as any,
-      iconColor: '#000000' // Default or derived
+      type: catType as any,      
     };
 
     if (editingCatId) {
@@ -339,7 +379,7 @@ export default function App() {
                         <TouchableOpacity key={item.id} style={styles.transactionItem} onPress={() => openEditModal(item)}>
                           <View style={styles.transactionLeft}>
                             <View style={[styles.iconContainer, { backgroundColor: catInfo.color }]}>
-                              <Text style={{ fontSize: 16 }}>{catInfo.icon}</Text>
+                              <Text style={{ fontSize: 16, color: catInfo.iconColor }}>{catInfo.icon}</Text>
                             </View>
                             <View>
                               <Text style={styles.transactionTitle}>{item.title}</Text>
@@ -373,7 +413,7 @@ export default function App() {
                     <TouchableOpacity key={c.id} style={styles.transactionItem} onPress={() => openCatModal(c)}>
                       <View style={styles.transactionLeft}>
                         <View style={[styles.iconContainer, { backgroundColor: c.color }]}>
-                          <Text style={{ fontSize: 16 }}>{c.icon}</Text>
+                          <Text style={{ fontSize: 16, color: c.iconColor }}>{c.icon}</Text>
                         </View>
                         <Text style={styles.transactionTitle}>{c.name}</Text>
                       </View>
@@ -484,7 +524,7 @@ export default function App() {
                                   style={[styles.catItem, category === c.id && styles.catItemActive, { backgroundColor: c.color }]}
                                   onPress={() => { setCategory(c.id)}}
                                 >
-                                  <Text style={{ fontSize: 24 }}>{c.icon}</Text>
+                                  <Text style={{ fontSize: 24, color: c.iconColor }}>{c.icon}</Text>
                                   <Text style={styles.catName}>{c.name}</Text>
                                 </TouchableOpacity>
                               ))}
@@ -519,14 +559,17 @@ export default function App() {
             <Modal animationType="slide" transparent={true} visible={catModalVisible}>
               <View style={styles.modalCenterWrapper}>
                 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
-                  <View style={styles.modalContent}>
+                  <Animated.View style={[styles.modalContent, { height: catModalHeight }]}> 
+                    
+                    <View {...panResponderCat.panHandlers} style={{ width: '100%', height: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                      <View style={{ width: 40, height: 5, backgroundColor: '#9CA3AF', borderRadius: 10 }} />
+                    </View>
+
                     <View style={styles.modalHeader}>
                       <Text style={styles.modalTitle}>{editingCatId ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}</Text>
-                      {editingCatId && (
-                        <TouchableOpacity onPress={handleDeleteCategory} style={styles.deleteBtn}>
-                          <Text style={styles.deleteText}>ลบ</Text>
-                        </TouchableOpacity>
-                      )}
+                      <TouchableOpacity style={styles.cancelBtn} onPress={() => setCatModalVisible(false)}>
+                        <Text style={styles.cancelText}>X</Text>
+                      </TouchableOpacity>
                     </View>
 
                     <TextInput
@@ -542,14 +585,16 @@ export default function App() {
                       onChangeText={setCatIcon}
                     />
                     <View style={styles.modalActions}>
-                      <TouchableOpacity style={styles.cancelBtn} onPress={() => setCatModalVisible(false)}>
-                        <Text style={styles.cancelText}>ยกเลิก</Text>
-                      </TouchableOpacity>
+                      {editingCatId && (
+                        <TouchableOpacity onPress={handleDeleteCategory} style={styles.deleteBtn}>
+                          <Text style={styles.deleteText}>ลบ</Text>
+                        </TouchableOpacity>
+                      )}
                       <TouchableOpacity style={styles.saveBtn} onPress={handleSaveCategory}>
                         <Text style={styles.saveText}>บันทึก</Text>
                       </TouchableOpacity>
                     </View>
-                  </View>
+                  </Animated.View>
                 </KeyboardAvoidingView>
               </View>
             </Modal>
