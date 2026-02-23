@@ -35,7 +35,7 @@ describe('db module basic flow', () => {
 
   test('add, update, delete category', async () => {
     await initDatabase();
-    const cat: Category = { id: 't1', name: 'T1', icon: '🧪', color: '#fff', type: 'expense', iconColor: '#000' };
+    const cat: Category = { id: 't1', name: 'T1', icon: '🧪', color: '#fff', type: 'expense' };
     await addCategory(cat);
     let cats = await getCategories();
     expect(cats.find(c => c.id === 't1')).toBeDefined();

@@ -326,7 +326,7 @@ export default function App() {
 
   const getCategoryIcon = (catId: string) => {
     const cat = categories.find(c => c.id === catId);
-    return cat ? { icon: cat.icon, color: cat.color, iconColor: cat.iconColor, name: cat.name } : { icon: '📝', color: '#F3F4F6', iconColor: '#9CA3AF', name: 'อื่นๆ' };
+    return cat ? { icon: cat.icon, color: cat.color, name: cat.name } : { icon: '📝', color: '#F3F4F6', name: 'อื่นๆ' };
   };
 
   return (
@@ -379,7 +379,7 @@ export default function App() {
                         <TouchableOpacity key={item.id} style={styles.transactionItem} onPress={() => openEditModal(item)}>
                           <View style={styles.transactionLeft}>
                             <View style={[styles.iconContainer, { backgroundColor: catInfo.color }]}>
-                              <Text style={{ fontSize: 16, color: catInfo.iconColor }}>{catInfo.icon}</Text>
+                              <Text style={{ fontSize: 16 }}>{catInfo.icon}</Text>
                             </View>
                             <View>
                               <Text style={styles.transactionTitle}>{item.title}</Text>
@@ -413,7 +413,7 @@ export default function App() {
                     <TouchableOpacity key={c.id} style={styles.transactionItem} onPress={() => openCatModal(c)}>
                       <View style={styles.transactionLeft}>
                         <View style={[styles.iconContainer, { backgroundColor: c.color }]}>
-                          <Text style={{ fontSize: 16, color: c.iconColor }}>{c.icon}</Text>
+                            <Text style={{ fontSize: 16 }}>{c.icon}</Text>
                         </View>
                         <Text style={styles.transactionTitle}>{c.name}</Text>
                       </View>
@@ -524,7 +524,7 @@ export default function App() {
                                   style={[styles.catItem, category === c.id && styles.catItemActive, { backgroundColor: c.color }]}
                                   onPress={() => { setCategory(c.id)}}
                                 >
-                                  <Text style={{ fontSize: 24, color: c.iconColor }}>{c.icon}</Text>
+                                  <Text style={{ fontSize: 24 }}>{c.icon}</Text>
                                   <Text style={styles.catName}>{c.name}</Text>
                                 </TouchableOpacity>
                               ))}

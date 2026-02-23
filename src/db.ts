@@ -16,7 +16,6 @@ export type Category = {
   icon: string;
   color: string;
   type: 'income' | 'expense';
-  iconColor?: string;
 };
 
 // Storage keys
@@ -25,14 +24,14 @@ const CAT_KEY = '@z:categories';
 
 // Default categories (kept small; App.tsx expects DEFAULT_CATEGORIES export)
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'food', name: 'อาหาร', icon: '🍔', color: '#FEE2E2', type: 'expense', iconColor: '#000' },
-  { id: 'transport', name: 'เดินทาง', icon: '🚌', color: '#E0F2FE', type: 'expense', iconColor: '#000' },
-  { id: 'shopping', name: 'ช้อปปิ้ง', icon: '🛍️', color: '#FCE7F3', type: 'expense', iconColor: '#000' },
-  { id: 'education', name: 'การศึกษา', icon: '📚', color: '#E9D5FF', type: 'expense', iconColor: '#000' },
-  { id: 'entertainment', name: 'บันเทิง', icon: '🎬', color: '#E0F7FA', type: 'expense', iconColor: '#000' },
-  { id: 'salary', name: 'เงินเดือน', icon: '💼', color: '#DCFCE7', type: 'income', iconColor: '#000' },
-  { id: 'other_income', name: 'อื่นๆ', icon: '📝', color: '#F3F4F6', type: 'income', iconColor: '#9CA3AF' },
-  { id: 'other_expense', name: 'อื่นๆ', icon: '📝', color: '#F3F4F6', type: 'expense', iconColor: '#9CA3AF' },
+  { id: 'food', name: 'อาหาร', icon: '🍔', color: '#FEE2E2', type: 'expense' },
+  { id: 'transport', name: 'เดินทาง', icon: '🚌', color: '#E0F2FE', type: 'expense' },
+  { id: 'shopping', name: 'ช้อปปิ้ง', icon: '🛍️', color: '#FCE7F3', type: 'expense' },
+  { id: 'education', name: 'การศึกษา', icon: '📚', color: '#E9D5FF', type: 'expense' },
+  { id: 'entertainment', name: 'บันเทิง', icon: '🎬', color: '#E0F7FA', type: 'expense' },
+  { id: 'salary', name: 'เงินเดือน', icon: '💼', color: '#DCFCE7', type: 'income' },
+  { id: 'other_income', name: 'อื่นๆ', icon: '📝', color: '#F3F4F6', type: 'income' },
+  { id: 'other_expense', name: 'อื่นๆ', icon: '📝', color: '#F3F4F6', type: 'expense' },
 ];
 
 // Initialize database: ensure categories exist
@@ -40,9 +39,7 @@ export async function initDatabase(): Promise<void> {
   try {
     const cats = await AsyncStorage.getItem(CAT_KEY);
     if (cats == null) {
-      // Ensure default categories have iconColor
-      const withIconColor = DEFAULT_CATEGORIES.map(c => ({ ...c, iconColor: c.iconColor || getContrastColor(c.color) }));
-      await AsyncStorage.setItem(CAT_KEY, JSON.stringify(withIconColor));
+      await AsyncStorage.setItem(CAT_KEY, JSON.stringify(DEFAULT_CATEGORIES));
     }
     const tx = await AsyncStorage.getItem(TX_KEY);
     if (tx == null) {
@@ -51,21 +48,6 @@ export async function initDatabase(): Promise<void> {
   } catch (e) {
     // swallow for now; caller can handle if needed
     console.warn('initDatabase error', e);
-  }
-}
-
-// Helper: return readable icon color (black or white) depending on bg hex
-function getContrastColor(hex: string) {
-  try {
-    const c = hex.replace('#', '').trim();
-    const r = parseInt(c.substring(0, 2), 16);
-    const g = parseInt(c.substring(2, 4), 16);
-    const b = parseInt(c.substring(4, 6), 16);
-    // Perceived luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.6 ? '#000000' : '#FFFFFF';
-  } catch (e) {
-    return '#000000';
   }
 }
 
@@ -132,23 +114,7 @@ export async function getCategories(): Promise<Category[]> {
     for (const def of DEFAULT_CATEGORIES) {
       if (!merged.find(c => c.id === def.id)) merged.push(def);
     }
-    // Ensure iconColor exists for all categories; if missing, compute and persist
-    let changed = false;
-    const ensured = merged.map(c => {
-      if (!c.iconColor) {
-        changed = true;
-        return { ...c, iconColor: getContrastColor(c.color || '#FFFFFF') };
-      }
-      return c;
-    });
-    if (changed) {
-      try {
-        await AsyncStorage.setItem(CAT_KEY, JSON.stringify(ensured));
-      } catch (e) {
-        console.warn('getCategories persist iconColor error', e);
-      }
-    }
-    return ensured;
+    return merged;
   } catch (e) {
     console.warn('getCategories error', e);
     return DEFAULT_CATEGORIES;
@@ -158,10 +124,9 @@ export async function getCategories(): Promise<Category[]> {
 export async function addCategory(cat: Category) {
   try {
     const all = await getCategories();
-    const withIcon = { ...cat, iconColor: cat.iconColor || getContrastColor(cat.color || '#FFFFFF') };
-    all.push(withIcon);
+    all.push(cat);
     await AsyncStorage.setItem(CAT_KEY, JSON.stringify(all));
-    return withIcon;
+    return cat;
   } catch (e) {
     console.warn('addCategory error', e);
     throw e;
@@ -173,10 +138,9 @@ export async function updateCategory(cat: Category) {
     const all = await getCategories();
     const idx = all.findIndex(c => c.id === cat.id);
     if (idx === -1) throw new Error('Category not found');
-    const withIcon = { ...cat, iconColor: cat.iconColor || getContrastColor(cat.color || '#FFFFFF') };
-    all[idx] = withIcon;
+    all[idx] = cat;
     await AsyncStorage.setItem(CAT_KEY, JSON.stringify(all));
-    return withIcon;
+    return cat;
   } catch (e) {
     console.warn('updateCategory error', e);
     throw e;
