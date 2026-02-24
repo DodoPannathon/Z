@@ -4,6 +4,7 @@ import Svg, { Circle, G } from 'react-native-svg';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { initDatabase, getTransactions, addTransaction, updateTransaction, deleteTransaction, Transaction, getCategories, addCategory, updateCategory, deleteCategory, Category, DEFAULT_CATEGORIES } from './src/db';
 import { setStatusBarBackgroundColor } from 'expo-status-bar';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 const { width, height: screenHeight } = Dimensions.get('window');
 
@@ -13,6 +14,7 @@ export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [modalVisible, setModalVisible] = useState(false);
+  const [showDateTimePicker, setshowDateTimePicker] = useState(false);
 
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -20,6 +22,7 @@ export default function App() {
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [category, setCategory] = useState('other');
+  const [date, setdate] = useState(new Date());
 
   // Create PanResponder for Swipeable Modal
   const initialModalHeight = screenHeight * 0.8;
@@ -125,7 +128,7 @@ export default function App() {
   const [catName, setCatName] = useState('');
   const [catIcon, setCatIcon] = useState('📝');
   const [catColor, setCatColor] = useState('#F3F4F6');
-  const [catType, setCatType] = useState<'income' | 'expense' | 'all'>('expense');
+  const [catType, setCatType] = useState<'income' | 'expense'>('expense');
 
   useEffect(() => {
     if (catModalVisible) {
@@ -158,6 +161,7 @@ export default function App() {
     setAmount('');
     setType('expense');
     setCategory('other');
+    setdate(new Date())
     setModalVisible(true);
   };
 
@@ -167,7 +171,12 @@ export default function App() {
     setAmount(item.amount.toString());
     setType(item.type);
     setCategory(item.category || 'other');
+    setdate(new Date(item.date) || new Date());
     setModalVisible(true);
+    console.log(item.date)
+    console.log(new Date().toLocaleString('th-TH'))
+    console.log(new Date(item.date))
+    console.log(new Date())
   };
 
   const handleSave = async () => {
@@ -180,10 +189,10 @@ export default function App() {
         amount: parseFloat(amount),
         type,
         category,
-        date: new Date().toLocaleString('th-TH')
+        date: date.toISOString()
       });
     } else {
-      await addTransaction(title, parseFloat(amount), type, category);
+      await addTransaction(title, parseFloat(amount), type, category, date.toISOString());
     }
 
     setModalVisible(false);
@@ -375,6 +384,8 @@ export default function App() {
                       <Text style={{ textAlign: 'center', marginTop: 20, color: '#9CA3AF' }}>ยังไม่มีรายการ</Text>
                     ) : transactions.map((item) => {
                       const catInfo = getCategoryIcon(item.category || 'other');
+                      const date_type = new Date(item.date);
+                      const localdate = date_type.toLocaleString();
                       return (
                         <TouchableOpacity key={item.id} style={styles.transactionItem} onPress={() => openEditModal(item)}>
                           <View style={styles.transactionLeft}>
@@ -383,7 +394,7 @@ export default function App() {
                             </View>
                             <View>
                               <Text style={styles.transactionTitle}>{item.title}</Text>
-                              <Text style={styles.transactionDate}>{item.date}</Text>
+                              <Text style={styles.transactionDate}>{localdate}</Text>
                             </View>
                           </View>
                           <Text style={[
@@ -459,7 +470,7 @@ export default function App() {
                   <Animated.View style={[styles.modalContent, { height: modalHeight }]}>
 
                     {/* Drag Handle */}
-                    <View {...panResponder.panHandlers} style={{ width: '100%', height: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                    <View {...panResponder.panHandlers} style={{ width: '100%', height: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                       <View style={{ width: 40, height: 5, backgroundColor: '#9CA3AF', borderRadius: 10 }} />
                     </View>
 
@@ -471,7 +482,9 @@ export default function App() {
                           <Text style={styles.cancelText}>X</Text>
                         </TouchableOpacity>
                       </View>
+                    </View>
 
+                    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
                       <View style={styles.typeSelector}>
                         <TouchableOpacity
                           style={[styles.typeBtn, type === 'income' && styles.typeBtnIncome]}
@@ -499,19 +512,34 @@ export default function App() {
                         <Text style={styles.currencySuffix}>฿</Text>
                       </View>
 
-                      <Text style={styles.label}>ตั้งชื่อ</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="เช่น ค่าอาหาร, ค่ารถ"
-                        value={title}
-                        onChangeText={setTitle}
-                      />
-
+                      {/* <Text style={styles.label}>ตั้งชื่อ</Text> */}
+                      <View style={styles.inputcontainer}>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="ตั้งชื่อ เช่น ค่าอาหาร, ค่ารถ"
+                          value={title}
+                          onChangeText={setTitle}
+                        />
+                      </View>
+                      <View style={styles.inputcontainer}>
+                        <TouchableOpacity
+                          style={styles.input}
+                          onPress={() => setshowDateTimePicker(true)}>
+                          <Text>{date.toLocaleDateString('th-TH')}</Text>
+                        </TouchableOpacity>
+                        {showDateTimePicker && (
+                          <DateTimePicker
+                            value={date}
+                            mode='date'
+                            onChange={(_event: DateTimePickerEvent, selectedDate?: Date) => {
+                              setshowDateTimePicker(false)
+                              if (selectedDate) setdate(selectedDate)
+                            }}
+                          />
+                        )}
+                      </View>
+                      
                       <Text style={styles.label}>เลือกหมวดหมู่</Text>
-                    </View>
-
-                    {/* Scrollable Middle Section (Categories Only) */}
-                    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
                       {
                         (() => {
                           const filtered = categories.filter(c => type === 'income' ? c.type === 'income' : c.type === 'expense');
@@ -678,9 +706,9 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 20, fontWeight: 'bold' },
   cancelBtn: { width: 35, height: 35, backgroundColor: '#eaeaeaff', borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  cancelText: { color: '#4B5563', fontSize: 18, fontWeight: 'bold' },
-  typeSelector: { flexDirection: 'row', marginBottom: 20 },
-  typeBtn: { flex: 1, padding: 12, alignItems: 'center', borderRadius: 12, backgroundColor: '#F3F4F6', marginHorizontal: 4 },
+  cancelText: { color: '#1f242a', fontSize: 18, fontWeight: 'medium' },
+  typeSelector: { flexDirection: 'row', marginBottom: 20, backgroundColor: '#f3f4f6', padding: 4, borderRadius: 14 },
+  typeBtn: { flex: 1, padding: 12, alignItems: 'center', borderRadius: 12, backgroundColor: '#F3F4F6' },
   typeBtnIncome: { backgroundColor: '#DCFCE7' },
   typeBtnExpense: { backgroundColor: '#FEE2E2' },
   typeText: { fontSize: 16, color: '#6B7280' },
@@ -689,17 +717,18 @@ const styles = StyleSheet.create({
   // Refined Amount Input
   amountContainerOval: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#F3F4F6', borderRadius: 99, paddingHorizontal: 24, paddingVertical: 12,
-    marginBottom: 24
+    backgroundColor: '#f0f2f5', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 18,
+    marginBottom: 20, borderWidth: 2, borderColor: '#dde1e7', gap: 8
   },
   amountInputOval: {
-    fontSize: 32, fontWeight: 'bold', color: '#1F2937', textAlign: 'center', minWidth: 100
-  },
+    fontSize: 32, fontWeight: 'bold', color: '#1F2937', textAlign: 'right', minWidth: 100, borderWidth: 0, outline: 'none'
+  }as any,
   currencySuffix: { fontSize: 24, fontWeight: 'bold', color: '#6B7280', marginLeft: 8 },
 
   label: { fontSize: 14, fontWeight: '600', color: '#4B5563', marginBottom: 8 },
 
-  input: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 16, marginBottom: 24, fontSize: 16 },
+  inputcontainer: {height: 52, backgroundColor: '#F9FAFB', borderWidth: 1, borderRadius: 12, borderColor: '#E5E7EB', marginBottom: 18, borderStyle: 'solid' },
+  input: { backgroundColor: '#F9FAFB', fontSize: 15, width: '100%', height: '100%', borderRadius: 12, padding: 13 },  
 
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 24, marginTop: 10 },
   catItem: { width: '30%', aspectRatio: 1, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12, borderWidth: 2, borderColor: 'transparent', backgroundColor: '#F3F4F6' },

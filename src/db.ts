@@ -64,11 +64,11 @@ export async function getTransactions(): Promise<Transaction[]> {
   }
 }
 
-export async function addTransaction(title: string, amount: number, type: 'income' | 'expense', category = 'other') {
+export async function addTransaction(title: string, amount: number, type: 'income' | 'expense', category = 'other', date:string) {
   try {
     const all = await getTransactions();
     const id = Date.now();
-    const item: Transaction = { id, title, amount, type, category, date: new Date().toLocaleString('th-TH') };
+    const item: Transaction = { id, title, amount, type, category, date };
     all.unshift(item);
     await AsyncStorage.setItem(TX_KEY, JSON.stringify(all));
     return item;
