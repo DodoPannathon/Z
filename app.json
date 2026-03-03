@@ -26,13 +26,30 @@
         "translucent": false
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.pannathon.Z"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "@react-native-community/datetimepicker"
-    ]
+      "@react-native-community/datetimepicker",
+      [
+        "expo-font",
+        {
+          "font":[
+            "./assets/fonts/static/NotoSansThai-Medium.ttf",
+            "./assets/fonts/static/NotoSansThai-Bold.ttf",
+            "./assets/fonts/static/NotoSansThai-SemiBold.ttf"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b3712dce-1a4c-42a8-a8e3-72193e415676"
+      }
+    },
+    "owner": "pannathon"
   }
 }

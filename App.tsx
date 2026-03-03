@@ -1,14 +1,24 @@
-import { Text, View, ScrollView, TouchableOpacity, StyleSheet, Platform, Dimensions, TextInput, Modal, KeyboardAvoidingView, Alert, StatusBar, Animated, PanResponder } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, StyleSheet, Platform, Dimensions, TextInput, Modal, KeyboardAvoidingView, Alert, StatusBar, Animated, PanResponder, ActivityIndicator } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import Svg, { Circle, G } from 'react-native-svg';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { initDatabase, getTransactions, addTransaction, updateTransaction, deleteTransaction, Transaction, getCategories, addCategory, updateCategory, deleteCategory, Category, DEFAULT_CATEGORIES } from './src/db';
-import { setStatusBarBackgroundColor } from 'expo-status-bar';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 
 const { width, height: screenHeight } = Dimensions.get('window');
 
+SplashScreen.preventAutoHideAsync();
+
 export default function App() {
+
+  const [fontsLoaded] = useFonts({
+    'NotoSansThai': require('./assets/fonts/static/NotoSansThai-Medium.ttf'),
+    'NotoSansThai-Bold': require('./assets/fonts/static/NotoSansThai-Bold.ttf'),
+    'NotoSansThai-SemiBold': require('./assets/fonts/static/NotoSansThai-SemiBold.ttf'),
+  });
+
   const [viewMode, setViewMode] = useState<'monthly' | 'weekly' | 'daily'>('daily');
   const [activeTab, setActiveTab] = useState('home');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -120,13 +130,10 @@ export default function App() {
     }
   }, [modalVisible]);
 
-  
-
-  // Category Form State
   const [catModalVisible, setCatModalVisible] = useState(false);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [catName, setCatName] = useState('');
-  const [catIcon, setCatIcon] = useState('📝');
+  const [catIcon, setCatIcon] = useState('');
   const [catColor, setCatColor] = useState('#F3F4F6');
   const [catType, setCatType] = useState<'income' | 'expense'>('expense');
 
@@ -144,6 +151,45 @@ export default function App() {
     };
     setup();
   }, []);
+
+  // useEffect(() => {
+  //   if (fontsLoaded) {
+  //     console.log('Fonts loaded:', fontsLoaded);
+  //     SplashScreen.hideAsync();
+  //   }
+  // }, [fontsLoaded]);
+
+  // if (!fontsLoaded) {
+  //   return null;
+  // }
+
+  // useEffect(() => {
+  //   async function loadFonts() {
+  //     try {
+  //       await Font.loadAsync({
+  //         'NotoSansThai': require('./assets/fonts/static/NotoSansThai-Medium.ttf'),
+  //         'NotoSansThai-Bold': require('./assets/fonts/static/NotoSansThai-Bold.ttf'),
+  //       });
+  //       console.log('✅ Font loaded successfully');
+  //       setFontsLoaded(true);
+        
+  //       (Text as any).defaultProps = (Text as any).defaultProps || {};
+  //       (Text as any).defaultProps.style = { fontFamily: 'NotoSansThai' };
+  //       console.log('✅ Default font set');
+  //     } catch (error) {
+  //       console.log('❌ Font loading error:', error);
+  //     }
+  //   }
+  //   loadFonts();
+  // }, []);
+
+  // if (!fontsLoaded) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+  //       <ActivityIndicator size="large" />
+  //     </View>
+  //   );
+  // }
 
   const loadData = async () => {
     const data = await getTransactions();
@@ -235,7 +281,7 @@ export default function App() {
     } else {
       setEditingCatId(null);
       setCatName('');
-      setCatIcon('📝');
+      setCatIcon('');
       setCatColor('#F3F4F6');
       setCatType('expense');
     }
@@ -381,7 +427,7 @@ export default function App() {
 
                   <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
                     {transactions.length === 0 ? (
-                      <Text style={{ textAlign: 'center', marginTop: 20, color: '#9CA3AF' }}>ยังไม่มีรายการ</Text>
+                      <Text style={{ textAlign: 'center', marginTop: 20, color: '#9CA3AF', fontFamily: 'NotoSansThai' }}>ยังไม่มีรายการ</Text>
                     ) : transactions.map((item) => {
                       const catInfo = getCategoryIcon(item.category || 'other');
                       const date_type = new Date(item.date);
@@ -428,7 +474,7 @@ export default function App() {
                         </View>
                         <Text style={styles.transactionTitle}>{c.name}</Text>
                       </View>
-                      <Text style={{ color: '#9CA3AF' }}>{c.type === 'income' ? 'รายรับ' : 'รายจ่าย'}</Text>
+                      <Text style={{ color: '#9CA3AF', fontFamily: 'NotoSansThai' }}>{c.type === 'income' ? 'รายรับ' : 'รายจ่าย'}</Text>
                     </TouchableOpacity>
                   ))}
                   <View style={{ height: 100 }} />
@@ -504,6 +550,7 @@ export default function App() {
                         <TextInput
                           style={styles.amountInputOval}
                           placeholder="0"
+                          placeholderTextColor="#1F2937"
                           value={amount}
                           onChangeText={setAmount}
                           keyboardType="numeric"
@@ -512,11 +559,11 @@ export default function App() {
                         <Text style={styles.currencySuffix}>฿</Text>
                       </View>
 
-                      {/* <Text style={styles.label}>ตั้งชื่อ</Text> */}
                       <View style={styles.inputcontainer}>
                         <TextInput
                           style={styles.input}
                           placeholder="ตั้งชื่อ เช่น ค่าอาหาร, ค่ารถ"
+                          placeholderTextColor="#c6c6c6"
                           value={title}
                           onChangeText={setTitle}
                         />
@@ -525,7 +572,7 @@ export default function App() {
                         <TouchableOpacity
                           style={styles.input}
                           onPress={() => setshowDateTimePicker(true)}>
-                          <Text>{date.toLocaleDateString('th-TH')}</Text>
+                          <Text style={{fontFamily: 'NotoSansThai'}}>{date.toLocaleDateString('th-TH')}</Text>
                         </TouchableOpacity>
                         {showDateTimePicker && (
                           <DateTimePicker
@@ -539,6 +586,8 @@ export default function App() {
                         )}
                       </View>
                       
+                      <View style={{ height: 1,width: '100%', backgroundColor: '#E5E7EB', marginBottom: 16 }}/>
+
                       <Text style={styles.label}>เลือกหมวดหมู่</Text>
                       {
                         (() => {
@@ -600,18 +649,34 @@ export default function App() {
                       </TouchableOpacity>
                     </View>
 
-                    <TextInput
-                      style={styles.input}
-                      placeholder="ชื่อหมวดหมู่"
-                      value={catName}
-                      onChangeText={setCatName}
-                    />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="ไอคอน (Emoji)"
-                      value={catIcon}
-                      onChangeText={setCatIcon}
-                    />
+                    <View style={styles.catItemcontainer}>                    
+                      <View
+                        style={[styles.catItem,{ backgroundColor: catColor }]}
+                      >
+                        <Text style={{ fontSize: 24 }}>{catIcon}</Text>
+                        <Text style={styles.catName}>{catName}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.inputcontainer}>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="ชื่อหมวดหมู่"
+                        placeholderTextColor="#c6c6c6"
+                        value={catName}
+                        onChangeText={setCatName}
+                      />
+                    </View>
+                    <View style={styles.inputcontainer}>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="ไอคอน (Emoji)"
+                        placeholderTextColor="#c6c6c6"
+                        value={catIcon}
+                        onChangeText={setCatIcon}
+                      />
+                    </View>
+
                     <View style={styles.modalActions}>
                       {editingCatId && (
                         <TouchableOpacity onPress={handleDeleteCategory} style={styles.deleteBtn}>
@@ -637,11 +702,11 @@ export default function App() {
 const styles = StyleSheet.create({
   webContainer: {
     flex: 1, backgroundColor: Platform.OS === 'web' ? '#e5e5e5' : '#F9FAFB',
-    alignItems: 'center', justifyContent: 'center'
+    alignItems: 'center', justifyContent: 'center', fontFamily: 'NotoSansThai'
   },
   container: {
     flex: 1, backgroundColor: '#F9FAFB',
-    width: '100%', maxWidth: Platform.OS === 'web' ? 480 : '100%',
+    width: '100%', maxWidth: Platform.OS === 'web' ? 480 : '100%', fontFamily: 'NotoSansThai',
     ...Platform.select({
       android: { paddingTop: 30 },
       web: { shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 20, minHeight: '100%', overflow: 'hidden' }
@@ -656,45 +721,45 @@ const styles = StyleSheet.create({
     zIndex: -1
   },
   headerTop: { marginBottom: 24, alignItems: 'center' },
-  headerTitle: { color: 'white', fontSize: 18, fontWeight: '600', marginBottom: 16 },
+  headerTitle: { color: 'white', fontSize: 18, fontFamily: 'NotoSansThai-SemiBold', marginBottom: 16 },
   viewSwitcher: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: 4 },
   switchBtn: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 16 },
-  switchBtnActive: { backgroundColor: 'white' },
-  switchText: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '500' },
-  switchTextActive: { color: '#059669', fontWeight: 'bold' },
+  switchBtnActive: { paddingRight: 15, backgroundColor: 'white' },
+  switchText: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontFamily: 'NotoSansThai' },
+  switchTextActive: { color: '#059669', fontFamily: 'NotoSansThai-Bold' },
   balanceContainer: { alignItems: 'center', marginTop: 10 },
   balanceLabel: { color: '#ECFDF5', fontSize: 14, marginBottom: 4 },
-  balanceAmount: { color: 'white', fontSize: 48, fontWeight: 'bold' },
+  balanceAmount: { color: 'white', fontSize: 48, fontFamily: 'NotoSansThai-Bold' },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 32 },
   statBox: { backgroundColor: 'rgba(5, 150, 105, 0.5)', padding: 12, borderRadius: 16, flex: 1, alignItems: 'center' },
   statBoxIncome: { marginRight: 8 },
   statBoxExpense: { marginLeft: 8 },
   statLabel: { color: '#D1FAE5', fontSize: 12, marginBottom: 4 },
-  statValue: { color: 'white', fontWeight: 'bold', fontSize: 18 },
+  statValue: { color: 'white', fontFamily: 'NotoSansThai-Bold', fontSize: 18 },
   dailyContainer: { alignItems: 'center', justifyContent: 'center' },
   circleWrapper: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
   circleTextContainer: { position: 'absolute', alignItems: 'center' },
-  circleLabel: { color: '#D1FAE5', fontSize: 14, marginBottom: 4 },
-  circleAmount: { color: 'white', fontSize: 32, fontWeight: 'bold' },
-  dailyBudgetLabel: { color: '#ECFDF5', marginTop: 16, fontSize: 14, opacity: 0.9 },
+  circleLabel: { color: '#D1FAE5', fontSize: 14, marginBottom: 4, fontFamily: 'NotoSansThai' },
+  circleAmount: { width: 82, color: 'white', fontSize: 32, fontFamily: 'NotoSansThai-Bold' },
+  dailyBudgetLabel: { width: 115, color: '#ECFDF5', marginTop: 16, fontSize: 14, opacity: 0.9, fontFamily: 'NotoSansThai' },
   listContainer: { flex: 1, paddingHorizontal: 20, marginTop: 24 },
   listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  listTitle: { fontSize: 18, fontWeight: 'bold', color: '#1F2937' },
-  viewAllText: { color: '#059669', fontSize: 14, fontWeight: '500' },
+  listTitle: { fontSize: 18, fontFamily: 'NotoSansThai-Bold', color: '#1F2937' },
+  viewAllText: { color: '#059669', fontSize: 14, fontFamily: 'NotoSansThai' },
   scrollView: { flex: 1 },
   scrollViewContent: { paddingBottom: 100 },
   transactionItem: { backgroundColor: 'white', padding: 16, borderRadius: 16, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#F3F4F6', shadowColor: '#000', shadowOpacity: 0.05, elevation: 2 },
   transactionLeft: { flexDirection: 'row', alignItems: 'center' },
   iconContainer: { padding: 8, borderRadius: 12, marginRight: 12, width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  transactionTitle: { color: '#1F2937', fontWeight: 'bold', fontSize: 16 },
-  transactionDate: { color: '#9CA3AF', fontSize: 12 },
+  transactionTitle: { color: '#1F2937', fontFamily: 'NotoSansThai-Bold', fontSize: 16 },
+  transactionDate: { color: '#9CA3AF', fontSize: 12, fontFamily: 'NotoSansThai' },
   transactionAmount: { fontWeight: 'bold', fontSize: 18 },
   bottomNav: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'white', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 12, paddingBottom: Platform.OS === 'ios' ? 24 : 12, borderTopWidth: 1, borderTopColor: '#F3F4F6', elevation: 20 },
   navItem: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   navIcon: { width: 24, height: 24, backgroundColor: '#E5E7EB', borderRadius: 6, marginBottom: 4 },
   navIconActive: { backgroundColor: '#10B981' },
-  navText: { fontSize: 10, color: '#9CA3AF' },
-  navTextActive: { color: '#10B981', fontWeight: 'bold' },
+  navText: { fontSize: 10, color: '#9CA3AF', fontFamily: 'NotoSansThai' },
+  navTextActive: { color: '#10B981', fontFamily: 'NotoSansThai-Bold' },
   navFabContainer: { marginTop: -40 },
   navFab: { width: 56, height: 56, backgroundColor: '#10B981', borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#059669', shadowOpacity: 0.3, elevation: 8 },
   navFabText: { color: 'white', fontSize: 32, marginTop: -4 },
@@ -704,15 +769,15 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, width: '100%', maxWidth: 480, backgroundColor: 'transparent', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: 'white', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold' },
+  modalTitle: { fontSize: 20, fontFamily: 'NotoSansThai-Bold' },
   cancelBtn: { width: 35, height: 35, backgroundColor: '#eaeaeaff', borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  cancelText: { color: '#1f242a', fontSize: 18, fontWeight: 'medium' },
+  cancelText: { color: '#1f242a', fontSize: 18, fontFamily: 'NotoSansThai' },
   typeSelector: { flexDirection: 'row', marginBottom: 20, backgroundColor: '#f3f4f6', padding: 4, borderRadius: 14 },
   typeBtn: { flex: 1, padding: 12, alignItems: 'center', borderRadius: 12, backgroundColor: '#F3F4F6' },
   typeBtnIncome: { backgroundColor: '#DCFCE7' },
   typeBtnExpense: { backgroundColor: '#FEE2E2' },
-  typeText: { fontSize: 16, color: '#6B7280' },
-  typeTextActive: { fontWeight: 'bold', color: 'black' },
+  typeText: { fontSize: 16, color: '#6B7280', fontFamily: 'NotoSansThai' },
+  typeTextActive: { fontFamily: 'NotoSansThai-Bold', color: 'black' },
 
   // Refined Amount Input
   amountContainerOval: {
@@ -721,23 +786,25 @@ const styles = StyleSheet.create({
     marginBottom: 20, borderWidth: 2, borderColor: '#dde1e7', gap: 8
   },
   amountInputOval: {
-    fontSize: 32, fontWeight: 'bold', color: '#1F2937', textAlign: 'right', minWidth: 100, borderWidth: 0, outline: 'none'
+    fontSize: 32, fontFamily: 'NotoSansThai-Bold', color: '#1F2937', textAlign: 'right', minWidth: 100, borderWidth: 0, outline: 'none'
   }as any,
-  currencySuffix: { fontSize: 24, fontWeight: 'bold', color: '#6B7280', marginLeft: 8 },
+  currencySuffix: { fontSize: 24, fontFamily: 'NotoSansThai-Bold', color: '#6B7280', marginLeft: 8 },
 
-  label: { fontSize: 14, fontWeight: '600', color: '#4B5563', marginBottom: 8 },
+  label: { fontSize: 14, color: '#4B5563', marginBottom: 8, fontFamily: 'NotoSansThai-SemiBold' },
 
   inputcontainer: {height: 52, backgroundColor: '#F9FAFB', borderWidth: 1, borderRadius: 12, borderColor: '#E5E7EB', marginBottom: 18, borderStyle: 'solid' },
-  input: { backgroundColor: '#F9FAFB', fontSize: 15, width: '100%', height: '100%', borderRadius: 12, padding: 13 },  
+  input: { color: '#1F2937', backgroundColor: '#F9FAFB', fontSize: 15, width: '100%', height: '100%', borderRadius: 12, padding: 13, fontFamily: 'NotoSansThai' },  
 
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 24, marginTop: 10 },
   catItem: { width: '30%', aspectRatio: 1, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12, borderWidth: 2, borderColor: 'transparent', backgroundColor: '#F3F4F6' },
   catItemActive: { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
-  catName: { fontSize: 12, color: '#4B5563', marginTop: 4 },
+  catName: { fontSize: 12, color: '#4B5563', marginTop: 4, fontFamily: 'NotoSansThai' },
+
+  catItemcontainer: { width: '100%', alignItems: 'center', padding: 5 },
 
   modalActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10 },
   deleteBtn: { flex: 1, padding: 16, alignItems: 'center', marginRight: 12, backgroundColor: '#EF4444', borderRadius: 12 },
-  deleteText: { color: '#F3F4F6', fontWeight: 'bold', fontSize: 16 },
+  deleteText: { color: '#F3F4F6', fontFamily: 'NotoSansThai-Bold', fontSize: 16 },
   saveBtn: { flex: 1, backgroundColor: '#10B981', padding: 16, borderRadius: 12, alignItems: 'center' },
-  saveText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
+  saveText: { color: 'white', fontFamily: 'NotoSansThai-Bold', fontSize: 16 },
 });
