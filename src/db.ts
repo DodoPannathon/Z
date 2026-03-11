@@ -16,6 +16,7 @@ export type Category = {
   icon: string;
   color: string;
   type: 'income' | 'expense';
+  monthlyLimit?: number;
 };
 
 // Storage keys
@@ -33,6 +34,23 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'other_income', name: 'อื่นๆ', icon: '📝', color: '#F3F4F6', type: 'income' },
   { id: 'other_expense', name: 'อื่นๆ', icon: '📝', color: '#F3F4F6', type: 'expense' },
 ];
+
+export const DEFAULT_COLOR = [
+  '#F3F4F6',
+  '#FFD4D4', // Soft Red
+  '#FFD9B3', // Soft Peach
+  '#FFE9CC', // Soft Orange
+  '#FFF9B0', // Soft Yellow
+  '#D4F1D4', // Soft Green
+  '#C8EEF5', // Soft Cyan
+  '#C8E6F5', // Soft Blue
+  '#E6D5F5', // Soft Purple
+  '#F8C8E1', // Soft Pink
+  '#E0F5CC', // Soft Lime
+  '#F5D9B8', // Soft Deep Orange
+  '#DED0F5', // Soft Indigo
+  '#E8EFAA', // Soft Yellow-Green
+]
 
 // Initialize database: ensure categories exist
 export async function initDatabase(): Promise<void> {

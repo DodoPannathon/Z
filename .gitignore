@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+src/components/ColorPickerModal.tsx
+
+.stfolder/
+.stignore
+.stversions/

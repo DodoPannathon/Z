@@ -2,10 +2,12 @@ import { Text, View, ScrollView, TouchableOpacity, StyleSheet, Platform, Dimensi
 import { useState, useEffect, useRef } from 'react';
 import Svg, { Circle, G } from 'react-native-svg';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { initDatabase, getTransactions, addTransaction, updateTransaction, deleteTransaction, Transaction, getCategories, addCategory, updateCategory, deleteCategory, Category, DEFAULT_CATEGORIES } from './src/db';
+import { initDatabase, getTransactions, addTransaction, updateTransaction, deleteTransaction, Transaction, getCategories, addCategory, updateCategory, deleteCategory, Category, DEFAULT_CATEGORIES, DEFAULT_COLOR } from './src/db';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import SummaryScreen from './src/screens/SummaryScreen';
+import BudgetScreen from './src/screens/BudgetScreen';
 
 const { width, height: screenHeight } = Dimensions.get('window');
 
@@ -20,11 +22,13 @@ export default function App() {
   });
 
   const [viewMode, setViewMode] = useState<'monthly' | 'weekly' | 'daily'>('daily');
+  const [viewModeSummary, setViewModeSummary] = useState<"month" | "week" | "year">('month');
   const [activeTab, setActiveTab] = useState('home');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [modalVisible, setModalVisible] = useState(false);
   const [showDateTimePicker, setshowDateTimePicker] = useState(false);
+  const [budgetcutperiod, setbudgetcutperiod] = useState<'monthly' | 'weekly' | 'daily'>('weekly');
 
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -36,14 +40,13 @@ export default function App() {
 
   // Create PanResponder for Swipeable Modal
   const initialModalHeight = screenHeight * 0.8;
-  // Don't allow the modal to expand all the way to the very top — leave a gap
-  const modalMaxHeight = screenHeight - (Platform.OS === 'ios' ? 80 : 15);
+  const modalMaxHeight = screenHeight - (Platform.OS === 'ios' ? 80 : 0);
   const modalHeight = useRef(new Animated.Value(initialModalHeight)).current;
   const dragStartHeight = useRef(initialModalHeight);
 
   // Category modal swipeable controls (separate from transaction modal)
-  const initialCatModalHeight = screenHeight * 0.6;
-  const catModalMaxHeight = screenHeight - (Platform.OS === 'ios' ? 80 : 15);
+  const initialCatModalHeight = screenHeight * 0.8;
+  const catModalMaxHeight = screenHeight - (Platform.OS === 'ios' ? 80 : 0);
   const catModalHeight = useRef(new Animated.Value(initialCatModalHeight)).current;
   const catDragStartHeight = useRef(initialCatModalHeight);
 
@@ -85,7 +88,7 @@ export default function App() {
             useNativeDriver: false,
             bounciness: 0
           }).start();
-        } else if (currentHeight < screenHeight * 0.75) {
+        } else if (currentHeight < screenHeight * 0.60) {
           setModalVisible(false);
         } else {
           Animated.spring(modalHeight, {
@@ -136,6 +139,7 @@ export default function App() {
   const [catIcon, setCatIcon] = useState('');
   const [catColor, setCatColor] = useState('#F3F4F6');
   const [catType, setCatType] = useState<'income' | 'expense'>('expense');
+  const [catmonthlylimit, setCatmonthlylimit] = useState('');
 
   useEffect(() => {
     if (catModalVisible) {
@@ -151,45 +155,6 @@ export default function App() {
     };
     setup();
   }, []);
-
-  // useEffect(() => {
-  //   if (fontsLoaded) {
-  //     console.log('Fonts loaded:', fontsLoaded);
-  //     SplashScreen.hideAsync();
-  //   }
-  // }, [fontsLoaded]);
-
-  // if (!fontsLoaded) {
-  //   return null;
-  // }
-
-  // useEffect(() => {
-  //   async function loadFonts() {
-  //     try {
-  //       await Font.loadAsync({
-  //         'NotoSansThai': require('./assets/fonts/static/NotoSansThai-Medium.ttf'),
-  //         'NotoSansThai-Bold': require('./assets/fonts/static/NotoSansThai-Bold.ttf'),
-  //       });
-  //       console.log('✅ Font loaded successfully');
-  //       setFontsLoaded(true);
-        
-  //       (Text as any).defaultProps = (Text as any).defaultProps || {};
-  //       (Text as any).defaultProps.style = { fontFamily: 'NotoSansThai' };
-  //       console.log('✅ Default font set');
-  //     } catch (error) {
-  //       console.log('❌ Font loading error:', error);
-  //     }
-  //   }
-  //   loadFonts();
-  // }, []);
-
-  // if (!fontsLoaded) {
-  //   return (
-  //     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-  //       <ActivityIndicator size="large" />
-  //     </View>
-  //   );
-  // }
 
   const loadData = async () => {
     const data = await getTransactions();
@@ -219,10 +184,6 @@ export default function App() {
     setCategory(item.category || 'other');
     setdate(new Date(item.date) || new Date());
     setModalVisible(true);
-    console.log(item.date)
-    console.log(new Date().toLocaleString('th-TH'))
-    console.log(new Date(item.date))
-    console.log(new Date())
   };
 
   const handleSave = async () => {
@@ -278,12 +239,14 @@ export default function App() {
       setCatIcon(cat.icon);
       setCatColor(cat.color);
       setCatType(cat.type);
+      setCatmonthlylimit(cat.monthlyLimit === undefined ? '' : cat.monthlyLimit.toString())
     } else {
       setEditingCatId(null);
       setCatName('');
       setCatIcon('');
       setCatColor('#F3F4F6');
       setCatType('expense');
+      setCatmonthlylimit('');
     }
     setCatModalVisible(true);
   };
@@ -295,7 +258,8 @@ export default function App() {
       name: catName,
       icon: catIcon,
       color: catColor,
-      type: catType as any,      
+      type: catType as any,
+      monthlyLimit: catmonthlylimit === '' ? undefined : Number(catmonthlylimit),
     };
 
     if (editingCatId) {
@@ -342,7 +306,17 @@ export default function App() {
 
   const renderDailyProgress = () => {
     const dailyBudget = 800;
-    const todayExpense = transactions.filter(t => t.type === 'expense' && t.date.startsWith(new Date().toLocaleDateString('th-TH'))).reduce((acc, c) => acc + c.amount, 0);
+    const todayExpense = transactions.filter(t => {
+      const date_tx = new Date(t.date)
+      const date_now = new Date()
+
+      return (
+        t.type === 'expense' && 
+        date_tx.getFullYear() === date_now.getFullYear() &&
+        date_tx.getMonth() === date_now.getMonth() &&
+        date_tx.getDate() === date_now.getDate()
+      )
+    }).reduce((acc, c) => acc + c.amount, 0);
     const remaining = dailyBudget - todayExpense;
     const progress = (remaining / dailyBudget);
     const size = 180;
@@ -457,13 +431,33 @@ export default function App() {
               </View>
             )}
 
-            {activeTab === 'budget' && (
+            {activeTab === 'category' && (
               <View style={styles.listContainer}>
                 <View style={styles.listHeader}>
                   <Text style={styles.listTitle}>จัดการหมวดหมู่</Text>
                   <TouchableOpacity onPress={() => openCatModal()}>
                     <Text style={styles.viewAllText}>+ เพิ่ม</Text>
                   </TouchableOpacity>
+                </View>
+                <Text style={styles.headerSubtitle}>รอบตัดงบ</Text>
+                <View style={styles.periodSelector}>
+                  {([
+                    { id: 'monthly', label: 'เดือน' },
+                    { id: 'weekly', label: 'อาทิตย์' },
+                    { id: 'daily', label: 'วัน' },
+                  ] as const).map((p) => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={[styles.periodBtn, budgetcutperiod === p.id && styles.periodBtnActive]}
+                      onPress={() => setbudgetcutperiod(p.id)}
+                    >
+                      <Text
+                        style={[styles.periodBtnText, budgetcutperiod === p.id && styles.periodBtnTextActive]}
+                      >
+                        {p.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
                 <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                   {categories.map((c) => (
@@ -472,7 +466,12 @@ export default function App() {
                         <View style={[styles.iconContainer, { backgroundColor: c.color }]}>
                             <Text style={{ fontSize: 16 }}>{c.icon}</Text>
                         </View>
-                        <Text style={styles.transactionTitle}>{c.name}</Text>
+                        <View>
+                          <Text style={styles.transactionTitle}>{c.name}</Text>
+                          {c.monthlyLimit && (
+                            <Text style={[styles.transactionDate, {color: '#16A34A'}]}>฿{c.monthlyLimit}</Text>
+                          )}
+                        </View>
                       </View>
                       <Text style={{ color: '#9CA3AF', fontFamily: 'NotoSansThai' }}>{c.type === 'income' ? 'รายรับ' : 'รายจ่าย'}</Text>
                     </TouchableOpacity>
@@ -482,13 +481,33 @@ export default function App() {
               </View>
             )}
 
+            {activeTab === 'budget' && (
+              <BudgetScreen
+                transactions={transactions}
+                categories={categories}
+                budgetcutperiod={budgetcutperiod}
+                onSummaryClick={() => setActiveTab('summary')}
+              />
+            )}
+
+            {activeTab === 'summary' && (
+              <SummaryScreen
+                transactions={transactions}
+                categories={categories}
+                period={viewModeSummary}
+                onPeriodChange={(newperiod) => {
+                  setViewModeSummary(newperiod)
+                }}
+              />
+            )}
+
             {/* Bottom Navigation */}
             <View style={styles.bottomNav}>
-              {['home', 'summary'].map(t => (
+              {['home', 'budget'].map(t => (
                 <TouchableOpacity key={t} style={styles.navItem} onPress={() => setActiveTab(t)}>
                   <View style={[styles.navIcon, activeTab === t && styles.navIconActive]} />
                   <Text style={[styles.navText, activeTab === t && styles.navTextActive]}>
-                    {t === 'home' ? 'หน้าหลัก' : 'สรุป'}
+                    {t === 'home' ? 'หน้าหลัก' : 'งบประมาณ'}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -499,11 +518,11 @@ export default function App() {
                 </View>
               </TouchableOpacity>
 
-              {['budget', 'settings'].map(t => (
+              {['category', 'settings'].map(t => (
                 <TouchableOpacity key={t} style={styles.navItem} onPress={() => setActiveTab(t)}>
                   <View style={[styles.navIcon, activeTab === t && styles.navIconActive]} />
                   <Text style={[styles.navText, activeTab === t && styles.navTextActive]}>
-                    {t === 'budget' ? 'หมวดหมู่' : 'ตั้งค่า'}
+                    {t === 'category' ? 'หมวดหมู่' : 'ตั้งค่า'}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -516,17 +535,18 @@ export default function App() {
                   <Animated.View style={[styles.modalContent, { height: modalHeight }]}>
 
                     {/* Drag Handle */}
-                    <View {...panResponder.panHandlers} style={{ width: '100%', height: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                      <View style={{ width: 40, height: 5, backgroundColor: '#9CA3AF', borderRadius: 10 }} />
-                    </View>
+                    <View {...panResponder.panHandlers} >
+                      <View style={{ width: '100%', height: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                        <View style={{ width: 40, height: 5, backgroundColor: '#9CA3AF', borderRadius: 10 }} />
+                      </View>
 
-                    {/* Fixed Top Section */}
-                    <View>
-                      <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>{editingId ? 'แก้ไขรายการ' : 'เพิ่มรายการใหม่'}</Text>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                          <Text style={styles.cancelText}>X</Text>
-                        </TouchableOpacity>
+                      <View>
+                        <View style={styles.modalHeader}>
+                          <Text style={styles.modalTitle}>{editingId ? 'แก้ไขรายการ' : 'เพิ่มรายการใหม่'}</Text>
+                          <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                            <Text style={styles.cancelText}>X</Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
 
@@ -638,54 +658,102 @@ export default function App() {
                 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
                   <Animated.View style={[styles.modalContent, { height: catModalHeight }]}> 
                     
-                    <View {...panResponderCat.panHandlers} style={{ width: '100%', height: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                      <View style={{ width: 40, height: 5, backgroundColor: '#9CA3AF', borderRadius: 10 }} />
-                    </View>
-
-                    <View style={styles.modalHeader}>
-                      <Text style={styles.modalTitle}>{editingCatId ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}</Text>
-                      <TouchableOpacity style={styles.cancelBtn} onPress={() => setCatModalVisible(false)}>
-                        <Text style={styles.cancelText}>X</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.catItemcontainer}>                    
-                      <View
-                        style={[styles.catItem,{ backgroundColor: catColor }]}
-                      >
-                        <Text style={{ fontSize: 24 }}>{catIcon}</Text>
-                        <Text style={styles.catName}>{catName}</Text>
+                    <View {...panResponderCat.panHandlers} >
+                      <View style={{ width: '100%', height: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                        <View style={{ width: 40, height: 5, backgroundColor: '#9CA3AF', borderRadius: 10 }} />
                       </View>
-                    </View>
 
-                    <View style={styles.inputcontainer}>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="ชื่อหมวดหมู่"
-                        placeholderTextColor="#c6c6c6"
-                        value={catName}
-                        onChangeText={setCatName}
-                      />
-                    </View>
-                    <View style={styles.inputcontainer}>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="ไอคอน (Emoji)"
-                        placeholderTextColor="#c6c6c6"
-                        value={catIcon}
-                        onChangeText={setCatIcon}
-                      />
-                    </View>
-
-                    <View style={styles.modalActions}>
-                      {editingCatId && (
-                        <TouchableOpacity onPress={handleDeleteCategory} style={styles.deleteBtn}>
-                          <Text style={styles.deleteText}>ลบ</Text>
+                      <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>{editingCatId ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}</Text>
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setCatModalVisible(false)}>
+                          <Text style={styles.cancelText}>X</Text>
                         </TouchableOpacity>
-                      )}
-                      <TouchableOpacity style={styles.saveBtn} onPress={handleSaveCategory}>
-                        <Text style={styles.saveText}>บันทึก</Text>
-                      </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.catItem_EXcontainer}>
+                        <View
+                          style={[styles.catItem_EX,{ backgroundColor: catColor }]}
+                        >
+                          <Text style={{ fontSize: 24 }}>{catIcon}</Text>
+                          <Text style={styles.catName}>{catName}</Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.typeSelector}>
+                        <TouchableOpacity
+                          style={[styles.typeBtn, catType === 'income' && styles.typeBtnIncome]}
+                          onPress={() => setCatType('income')}
+                        >
+                          <Text style={[styles.typeText, catType === 'income' && styles.typeTextActive]}>รายรับ</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.typeBtn, catType === 'expense' && styles.typeBtnExpense]}
+                          onPress={() => setCatType('expense')}
+                        >
+                          <Text style={[styles.typeText, catType === 'expense' && styles.typeTextActive]}>รายจ่าย</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.inputcontainer}>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="ชื่อหมวดหมู่"
+                          placeholderTextColor="#c6c6c6"
+                          value={catName}
+                          onChangeText={setCatName}
+                        />
+                      </View>
+                      <View style={styles.inputcontainer}>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="ไอคอน (Emoji)"
+                          placeholderTextColor="#c6c6c6"
+                          value={catIcon}
+                          onChangeText={setCatIcon}
+                        />
+                      </View>
+                        
+                      <View style={styles.colorselectcontainer}>
+                        {DEFAULT_COLOR.map(c => (
+                          <TouchableOpacity
+                            key={c}
+                            style={[styles.colorItem, { backgroundColor: c }, c === catColor && styles.colorTtemActive]}
+                            onPress={() => setCatColor(c)}
+                          />
+                        ))}
+                        {/* <TouchableOpacity
+                          onPress={() => setShowColorPicker(true)}
+                          style={[styles.colorItem, {backgroundColor: selectedColor}, selectedColor === catColor && styles.colorTtemActive]}
+                        />
+
+                        <ColorPicker
+                          visible={showColorPicker}
+                          onClose={() => setShowColorPicker(false)}
+                          onSelectColor={(color) => setSelectedColor(color)}
+                          currentColor={selectedColor}
+                        /> */}
+                      </View>
+
+                      <View style={styles.inputcontainer}>
+                        <TextInput
+                          style={styles.input}
+                          placeholder='งบประมาณ'
+                          placeholderTextColor="#c6c6c6"
+                          value={catmonthlylimit}
+                          onChangeText={setCatmonthlylimit}
+                        />
+                      </View>
+                      
+                      <View style={styles.modalActions}>
+                        {editingCatId && (
+                          <TouchableOpacity onPress={handleDeleteCategory} style={styles.deleteBtn}>
+                            <Text style={styles.deleteText}>ลบ</Text>
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity style={styles.saveBtn} onPress={handleSaveCategory}>
+                          <Text style={styles.saveText}>บันทึก</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </Animated.View>
                 </KeyboardAvoidingView>
@@ -723,10 +791,16 @@ const styles = StyleSheet.create({
   headerTop: { marginBottom: 24, alignItems: 'center' },
   headerTitle: { color: 'white', fontSize: 18, fontFamily: 'NotoSansThai-SemiBold', marginBottom: 16 },
   viewSwitcher: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: 4 },
+  headerSubtitle: {
+    marginLeft: 5,
+    fontSize: 16,
+    color: '#9CA3AF',
+    fontFamily: 'NotoSansThai',
+  },
   switchBtn: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 16 },
   switchBtnActive: { paddingRight: 15, backgroundColor: 'white' },
   switchText: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontFamily: 'NotoSansThai' },
-  switchTextActive: { color: '#059669', fontFamily: 'NotoSansThai-Bold' },
+  switchTextActive: { color: '#059669', paddingRight: 1, fontFamily: 'NotoSansThai-Bold' },
   balanceContainer: { alignItems: 'center', marginTop: 10 },
   balanceLabel: { color: '#ECFDF5', fontSize: 14, marginBottom: 4 },
   balanceAmount: { color: 'white', fontSize: 48, fontFamily: 'NotoSansThai-Bold' },
@@ -743,7 +817,7 @@ const styles = StyleSheet.create({
   circleAmount: { width: 82, color: 'white', fontSize: 32, fontFamily: 'NotoSansThai-Bold' },
   dailyBudgetLabel: { width: 115, color: '#ECFDF5', marginTop: 16, fontSize: 14, opacity: 0.9, fontFamily: 'NotoSansThai' },
   listContainer: { flex: 1, paddingHorizontal: 20, marginTop: 24 },
-  listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   listTitle: { fontSize: 18, fontFamily: 'NotoSansThai-Bold', color: '#1F2937' },
   viewAllText: { color: '#059669', fontSize: 14, fontFamily: 'NotoSansThai' },
   scrollView: { flex: 1 },
@@ -800,11 +874,46 @@ const styles = StyleSheet.create({
   catItemActive: { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
   catName: { fontSize: 12, color: '#4B5563', marginTop: 4, fontFamily: 'NotoSansThai' },
 
-  catItemcontainer: { width: '100%', alignItems: 'center', padding: 5 },
+  catItem_EX: {width: '30%', aspectRatio: 1, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12, borderWidth: 2, borderColor: 'transparent', backgroundColor: '#F3F4F6'},
+  catItem_EXcontainer: { width: '100%', alignItems: 'center', padding: 5 },
+  colorselectcontainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%',  height: 100, padding: 14, backgroundColor: '#F9FAFB', borderWidth: 1, borderRadius: 12, borderColor: '#E5E7EB', marginBottom: 18, borderStyle: 'solid' },
+  colorItem: { width: 30, height: 30, borderRadius: '50%', borderWidth: 2, borderColor: 'transparent', margin: 5 },
+  colorTtemActive: { borderColor: '#10B981' },
 
   modalActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10 },
   deleteBtn: { flex: 1, padding: 16, alignItems: 'center', marginRight: 12, backgroundColor: '#EF4444', borderRadius: 12 },
   deleteText: { color: '#F3F4F6', fontFamily: 'NotoSansThai-Bold', fontSize: 16 },
   saveBtn: { flex: 1, backgroundColor: '#10B981', padding: 16, borderRadius: 12, alignItems: 'center' },
   saveText: { color: 'white', fontFamily: 'NotoSansThai-Bold', fontSize: 16 },
+
+  periodSelector: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+    backgroundColor: '#F3F4F6',
+    padding: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  periodBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+  },
+  periodBtnActive: {
+    backgroundColor: '#10B981',
+  },
+  periodBtnText: {
+    fontSize: 16,
+    fontFamily: 'NotoSansThai',
+    color: '#6B7280',
+  },
+  periodBtnTextActive: {
+    color: '#FFFFFF',
+    fontFamily: 'NotoSansThai-Bold',
+  },
 });
