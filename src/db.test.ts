@@ -17,7 +17,7 @@ describe('db module basic flow', () => {
 
   test('add, update, delete transaction', async () => {
     await initDatabase();
-    const added = await addTransaction('Test', 100, 'expense', 'other');
+    const added = await addTransaction('Test', 100, 'expense', 'other',new Date().toISOString());
     expect(added.title).toBe('Test');
 
     let tx = await getTransactions();
