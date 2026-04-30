@@ -262,7 +262,7 @@ export default function SummaryScreen({
       )}
 
       {/* Daily Trend */}
-      {dailyData.length > 0 && (
+      {(dailyData.length > 0 && period == "week") && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>แนวโน้ม 7 วันล่าสุด</Text>
           <View style={styles.trendContainer}>
@@ -270,8 +270,6 @@ export default function SummaryScreen({
               const maxAmount = Math.max(
                 ...dailyData.map(d => Math.max(d.income, d.expense))
               );
-              console.log(day.date);
-              console.log(new Date(day.date))
               
               return (
                 <View key={index} style={styles.trendItem}>
