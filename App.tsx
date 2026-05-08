@@ -8,6 +8,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import SummaryScreen from './src/screens/SummaryScreen';
 import BudgetScreen from './src/screens/BudgetScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 const { width, height: screenHeight } = Dimensions.get('window');
 
@@ -501,6 +502,16 @@ export default function App() {
               />
             )}
 
+            {activeTab === 'settings' && (
+              <SettingsScreen
+                onManageCategories={() => setActiveTab('category')}
+                onExport={() => {}}
+                onBackup={() => {}}
+                onDeleteAll={() => {}}
+                onSignOut={() => {}}
+              />
+            )}
+
             {/* Bottom Navigation */}
             <View style={styles.bottomNav}>
               {['home', 'budget'].map(t => (
@@ -529,7 +540,7 @@ export default function App() {
             </View>
 
             {/* Add/Edit Transaction Modal */}
-            <Modal animationType="fade" transparent={true} visible={modalVisible}>
+            <Modal animationType="slide" transparent={true} visible={modalVisible}>
               <View style={styles.modalCenterWrapper}>
                 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
                   <Animated.View style={[styles.modalContent, { height: modalHeight }]}>
@@ -828,8 +839,8 @@ const styles = StyleSheet.create({
   transactionTitle: { color: '#1F2937', fontFamily: 'NotoSansThai-Bold', fontSize: 16 },
   transactionDate: { color: '#9CA3AF', fontSize: 12, fontFamily: 'NotoSansThai' },
   transactionAmount: { fontWeight: 'bold', fontSize: 18 },
-  bottomNav: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'white', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 12, paddingBottom: Platform.OS === 'ios' ? 24 : 12, borderTopWidth: 1, borderTopColor: '#F3F4F6', elevation: 20 },
-  navItem: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  bottomNav: { flexDirection: 'row', bottom: 0, left: 0, right: 0, backgroundColor: 'white', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 12, paddingBottom: Platform.OS === 'ios' ? 24 : 12, borderTopWidth: 1, borderTopColor: '#F3F4F6', elevation: 20 },
+  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   navIcon: { width: 24, height: 24, backgroundColor: '#E5E7EB', borderRadius: 6, marginBottom: 4 },
   navIconActive: { backgroundColor: '#10B981' },
   navText: { fontSize: 10, color: '#9CA3AF', fontFamily: 'NotoSansThai' },
