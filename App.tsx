@@ -504,11 +504,9 @@ export default function App() {
 
             {activeTab === 'settings' && (
               <SettingsScreen
+                period={budgetcutperiod}
                 onManageCategories={() => setActiveTab('category')}
-                onExport={() => {}}
-                onBackup={() => {}}
-                onDeleteAll={() => {}}
-                onSignOut={() => {}}
+                onPeriodChange={(newperiod) => setbudgetcutperiod(newperiod)}
               />
             )}
 
