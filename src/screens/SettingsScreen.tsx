@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; 
 
 interface SettingsScreenProps {
   period: 'daily' | 'weekly' | 'monthly';
@@ -28,8 +27,6 @@ export default function SettingsScreen({
   onDeleteAll,
   onSignOut,
 }: SettingsScreenProps) {
-  type Period = 'daily' | 'weekly' | 'monthly'
-
   const [showDecimal, setShowDecimal] = useState(true);
   const [notifyBudget, setNotifyBudget] = useState(true);
   const [remindDaily, setRemindDaily] = useState(false);
@@ -61,42 +58,38 @@ export default function SettingsScreen({
     option,
     title,
     value,
-    modalvisible,
     onrequestclose,
     onchange,
   }: {
     option: { id: T; name: string }[];
     title: string;
     value: T;
-    modalvisible: boolean;
     onrequestclose: () => void;
     onchange: (id: T) => void;
   }) => (
-    <Modal animationType='fade' transparent={true} visible={modalvisible} onRequestClose={onrequestclose}>
-      <View style={styles.modalcenterWrapper}>
-        <View style={styles.cardmodal}>
-          <View style={styles.cardheader}>
-            <TouchableOpacity style={styles.closeButton} onPress={onrequestclose}>
-              <View style={styles.closeIcon}/>
-              <View style={styles.closeButtonArea}/>
-            </TouchableOpacity>
-            <Text style={[styles.cardtitle, { flex: 1, textAlign: 'center' }]}>{title}</Text>
-          </View>
-          <View style={[styles.span, { marginBottom: 30, width: '120%' }]}/>
-          <View style={styles.cardbody}>
-            {option.map((t,i) => (
-              <React.Fragment key={t.id}>
-                <TouchableOpacity style={styles.cardbodycontainer} onPress={() => onchange?.(t.id)}>
-                  <View style={[styles.radiobutton, t.id == value ? styles.radiobuttonactive : null]}/>
-                  <Text style={styles.cardsubtitle}>{t.name}</Text>
-                </TouchableOpacity>
-                {i !== option.length - 1 && <View style={styles.span}/>}
-              </React.Fragment>
-            ))}
-          </View>
+    <View style={styles.modalcenterWrapper}>
+      <View style={styles.cardmodal}>
+        <View style={styles.cardheader}>
+          <TouchableOpacity style={styles.closeButton} onPress={onrequestclose}>
+            <View style={styles.closeIcon}/>
+            <View style={styles.closeButtonArea}/>
+          </TouchableOpacity>
+          <Text style={[styles.cardtitle, { flex: 1, textAlign: 'center' }]}>{title}</Text>
+        </View>
+        <View style={[styles.span, { marginBottom: 20, width: '120%' }]}/>
+        <View style={styles.cardbody}>
+          {option.map((t,i) => (
+            <React.Fragment key={t.id}>
+              <TouchableOpacity style={styles.cardbodycontainer} onPress={() => onchange?.(t.id)}>
+                <View style={[styles.radiobutton, t.id == value ? styles.radiobuttonactive : null]}/>
+                <Text style={styles.cardsubtitle}>{t.name}</Text>
+              </TouchableOpacity>
+              {/* {i !== option.length - 1 && <View style={styles.span}/>} */}
+            </React.Fragment>
+          ))}
         </View>
       </View>
-    </Modal>
+    </View>
   );
 
   return (
@@ -196,18 +189,19 @@ export default function SettingsScreen({
 
         <View style={{height: 40}} />
       </ScrollView>
-      <Modalradiocard
-        option={[
-          {id: 'monthly', name: 'รายเดือน'},
-          {id: 'weekly', name: 'รายอาทิตย์'},
-          {id: 'daily', name: 'รายวัน'},
-        ]}
-        title='รอบตัดงบ'
-        value={period}
-        modalvisible={showBudgetCutModal}
-        onchange={(newperiod)=>onPeriodChange(newperiod)}
-        onrequestclose={()=>setshowBudgetCutModal(false)}
-      />
+      <Modal animationType='fade' transparent={true} visible={showBudgetCutModal} onRequestClose={() => setshowBudgetCutModal(false)}>
+        <Modalradiocard
+          option={[
+            {id: 'monthly', name: 'รายเดือน'},
+            {id: 'weekly', name: 'รายอาทิตย์'},
+            {id: 'daily', name: 'รายวัน'},
+          ]}
+          title='รอบตัดงบ'
+          value={period}
+          onchange={(newperiod)=>onPeriodChange(newperiod)}
+          onrequestclose={()=>setshowBudgetCutModal(false)}
+        />
+      </Modal>
       {/* <Modal animationType='fade' transparent={true} visible={BudgetCutModal} onRequestClose={() => setBudgetCutModal(false)}>
         <View style={styles.modalcenterWrapper}>
           <View style={styles.cardmodal}>
@@ -311,7 +305,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   toggleOn: {
-    backgroundColor: '#378ADD',
+    backgroundColor: '#10B981'
   },
   toggleOff: {
     backgroundColor: '#5F5E5A',
@@ -357,12 +351,12 @@ const styles = StyleSheet.create({
   },
   cardtitle: {
     fontSize: 18,
-    color: '#1F2937',
+    color: '#3c5b3c',
     fontFamily: 'NotoSansThai-Bold',
   },
   cardsubtitle: {
     fontSize: 16,
-    color: '#1F2937',
+    color: '#3c5b3c',
     fontFamily: 'NotoSansThai',
   },
   cardheader: {
@@ -379,6 +373,7 @@ const styles = StyleSheet.create({
     transform: [{translateY: '-50%'}],
     zIndex: 1,
     width: '15%',
+    height: '100%',
     flexDirection: 'row',
   },
   closeIcon: {
@@ -402,10 +397,10 @@ const styles = StyleSheet.create({
   },
   cardbody: {
     width: '100%',
-    borderWidth: 1,
-    borderRadius: 15,
-    borderColor: '#BEBEBE',
-    overflow: 'hidden',
+    // borderWidth: 1,
+    // borderRadius: 15,
+    // borderColor: '#BEBEBE',
+    // overflow: 'hidden',
     // padding: 10,
   },
   cardbodycontainer: {
@@ -413,6 +408,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 15,
+    borderColor: '#BEBEBE',
+    padding: 10,
+    marginVertical: 5,
   },
   radiobutton: {
     width: 20,
