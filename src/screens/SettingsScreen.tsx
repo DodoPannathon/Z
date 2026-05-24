@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
+  TextInput,
 } from 'react-native';
 
 interface SettingsScreenProps {
@@ -32,6 +33,10 @@ export default function SettingsScreen({
   const [remindDaily, setRemindDaily] = useState(false);
 
   const [showBudgetCutModal, setshowBudgetCutModal] = useState(false);
+  const [showpickbillingcyclemodal, setshowpickbillingcyclemodal] = useState(false);
+  const [showThemeModal, setshowThemeModal] = useState(false);
+
+  const [theme, settheme] = useState<'dark' | 'bright' | 'ondevice'>('bright')
 
   const Toggle = ({value, onPress}: {value: boolean; onPress: () => void}) => (
     <TouchableOpacity
@@ -74,17 +79,17 @@ export default function SettingsScreen({
             <View style={styles.closeIcon}/>
             <View style={styles.closeButtonArea}/>
           </TouchableOpacity>
-          <Text style={[styles.cardtitle, { flex: 1, textAlign: 'center' }]}>{title}</Text>
+          <Text style={[styles.cardtitle, { flex: 1, textAlign: 'center', color: 'white' }]}>{title}</Text>
         </View>
-        <View style={[styles.span, { marginBottom: 20, width: '120%' }]}/>
+        {/* <View style={[styles.span, { marginBottom: 20, width: '120%' }]}/> */}
         <View style={styles.cardbody}>
           {option.map((t,i) => (
             <React.Fragment key={t.id}>
               <TouchableOpacity style={styles.cardbodycontainer} onPress={() => onchange?.(t.id)}>
-                <View style={[styles.radiobutton, t.id == value ? styles.radiobuttonactive : null]}/>
-                <Text style={styles.cardsubtitle}>{t.name}</Text>
+                <View style={[styles.radiobutton, t.id == value && styles.radiobuttonactive]}/>
+                <Text style={[styles.cardtitle, { fontFamily: 'NotoSansThai' }]}>{t.name}</Text>
               </TouchableOpacity>
-              {/* {i !== option.length - 1 && <View style={styles.span}/>} */}
+              {i !== option.length - 1 && <View style={styles.span}/>}
             </React.Fragment>
           ))}
         </View>
@@ -124,14 +129,14 @@ export default function SettingsScreen({
           <View style={styles.card}>
             <Row left={<Text style={styles.title}>จัดการหมวดหมู่</Text>} right={<Text style={styles.chev}>›</Text>} onPress={onManageCategories} />
             <Row left={<Text style={styles.title}>รอบตัดงบ</Text>} right={<Text style={styles.chev}>›</Text>} onPress={() => setshowBudgetCutModal(true)} />
-            <Row left={<Text style={styles.title}>วันเริ่มต้นรอบบิล</Text>} right={<Text style={styles.subtitle}>ทุกวันที่ 1 ›</Text>} />
+            <Row left={<Text style={styles.title}>วันเริ่มต้นรอบบิล</Text>} right={<Text style={styles.subtitle}>ทุกวันที่ 1 ›</Text>} onPress={() => setshowpickbillingcyclemodal(true)}/>
           </View>
         </View>
 
         <View style={styles.sectionWrap}>
           <Text style={styles.sectionLabel}>การแสดงผล</Text>
           <View style={styles.card}>
-            <Row left={<Text style={styles.title}>ธีม</Text>} right={<Text style={styles.subtitle}>ตามระบบ ›</Text>} />
+            <Row left={<Text style={styles.title}>ธีม</Text>} right={<Text style={styles.subtitle}>{theme == 'bright' ? 'สว่าง' : theme == 'dark' ? 'มืด' : 'ตามระบบ'} ›</Text>} onPress={() => setshowThemeModal(true)}/>
             <Row
               left={
                 <View>
@@ -201,6 +206,51 @@ export default function SettingsScreen({
           onchange={(newperiod)=>onPeriodChange(newperiod)}
           onrequestclose={()=>setshowBudgetCutModal(false)}
         />
+      </Modal>
+      <Modal animationType='fade' transparent={true} visible={showpickbillingcyclemodal} onRequestClose={() => setshowpickbillingcyclemodal(false)}>
+        <View style={styles.modalcenterWrapper}>
+          <View style={styles.cardmodal}>
+            <View style={styles.cardheader}>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setshowpickbillingcyclemodal(false)}>
+                <View style={styles.closeIcon}/>
+                <View style={styles.closeButtonArea}/>
+              </TouchableOpacity>
+              <Text style={[styles.cardtitle, { flex: 1, textAlign: 'center', color: 'white' }]}>วันเริ่มต้นรอบบิล</Text>
+            </View>
+            <View style={styles.cardbody}>
+              <Text style={styles.cardsubtitle}>เลือกวันตัดงบ</Text>
+              <View style={{borderWidth: 1, borderColor: '#E5E7EB', padding: 8, borderRadius: 10, flexDirection: 'row'}}>
+                <TouchableOpacity style={{height: 30, width: 30, backgroundColor: '#10B981', borderRadius: 20}}>
+                  <View style={{ alignItems: 'center', top: '-25%'}}>
+                    <Text style={{color: 'white', fontSize: 30, fontWeight: 'bold'}}>-</Text>
+                  </View>
+                </TouchableOpacity>
+                <View >
+                  <TextInput 
+                    style={{color: 'black', height: 30, padding: 0}}
+                    keyboardType='numeric'
+                    placeholder='วันที่เลือก'
+                    placeholderTextColor="#3c5b3c"
+                  />
+                </View>
+                
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal animationType='fade' transparent={true} visible={showThemeModal} onRequestClose={() => setshowThemeModal(false)}>
+          <Modalradiocard 
+            option={[
+              {id: 'dark', name: 'มืด'},
+              {id: 'bright', name: 'สว่าง'},
+              {id: 'ondevice', name: 'ตามระบบ'},
+            ]}
+            title='ธีม'
+            value={theme}
+            onchange={(newtheme) => settheme(newtheme)}
+            onrequestclose={() => setshowThemeModal(false)}
+          />
       </Modal>
       {/* <Modal animationType='fade' transparent={true} visible={BudgetCutModal} onRequestClose={() => setBudgetCutModal(false)}>
         <View style={styles.modalcenterWrapper}>
@@ -341,13 +391,13 @@ const styles = StyleSheet.create({
   cardmodal: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F2F2F7',
     borderRadius: 5,
-    padding: 20,
+    // padding: 20,
     width: '100%',
-    paddingTop: 35,
-    borderColor: '#E5E7EB',
-    borderWidth: 1,
+    // paddingTop: 35,
+    // borderColor: '#E5E7EB',
+    // borderWidth: 1,
   },
   cardtitle: {
     fontSize: 18,
@@ -361,16 +411,17 @@ const styles = StyleSheet.create({
   },
   cardheader: {
     flexDirection: 'row',
-    marginVertical: 10,
-    // marginBottom: 30,
+    paddingVertical: 10,
+    paddingTop: 30,
+    backgroundColor: '#10B981',
+    marginBottom: 20,
   },
   closeButton: {
     position: 'absolute',
     justifyContent: 'center',
     alignContent: 'center',
-    // left: 5,
-    top: '50%',
-    transform: [{translateY: '-50%'}],
+    left: '5%',
+    top: '105%',
     zIndex: 1,
     width: '15%',
     height: '100%',
@@ -381,6 +432,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderLeftWidth: 2,
     borderBottomWidth: 2,
+    borderColor: 'white',
     top: '50%',
     transform: [{rotate: '45deg'}, {translateY: '-70%' }],
   },
@@ -392,27 +444,27 @@ const styles = StyleSheet.create({
     height: 1,
     width: '100%',
     borderTopWidth: 1,
-    borderColor: '#BEBEBE',
+    borderColor: '#F2F2F7',
     // marginVertical: 10,
   },
   cardbody: {
-    width: '100%',
-    // borderWidth: 1,
-    // borderRadius: 15,
-    // borderColor: '#BEBEBE',
-    // overflow: 'hidden',
+    width: '90%',
+    borderWidth: 1,
+    borderRadius: 10,
+    borderColor: '#F2F2F7',
+    overflow: 'hidden',
     // padding: 10,
   },
   cardbodycontainer: {
-    margin: 10,
+    padding: 10,
     alignItems: 'center',
     justifyContent: 'flex-start',
     flexDirection: 'row',
-    borderWidth: 1,
-    borderRadius: 15,
-    borderColor: '#BEBEBE',
-    padding: 10,
-    marginVertical: 5,
+    backgroundColor: 'white',
+    // borderWidth: 1,
+    // borderRadius: 15,
+    // padding: 10,
+    // marginVertical: 5,
   },
   radiobutton: {
     width: 20,
@@ -421,15 +473,13 @@ const styles = StyleSheet.create({
     borderRadius: '50%',
     borderColor: '#BEBEBE',
     marginRight: 10,
-    // top: '50%',
-    // transform: [{ translateY: '-50%' }],
   },
   radiobuttonactive: {
     width: 20,
     height: 20,
     borderWidth: 6,
     borderRadius: '50%',
-    borderColor: '#BEBEBE',
+    borderColor: '#10B981',
     marginRight: 10,
   },
 });
